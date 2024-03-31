@@ -13,6 +13,9 @@ class TetherModel():
 
     prev_time = 0
 
+    spool_offset_x = 0.6096
+    spool_offset_y = 0.0
+
     def __init__(self):
         rospy.init_node("tether_model")
 
@@ -22,8 +25,12 @@ class TetherModel():
         rospy.spin()
 
     def pose_callback(self, msg):
-        dist = (msg.x**2 + msg.y**2) ** 0.5
-        tether_len = 1.2 * dist + 0.2
+        # dist = (msg.x**2 + msg.y**2) ** 0.5
+
+        dist = ((msg.x + self.spool_offset_x)**2 + (msg.y + self.spool_offset_y)**2)**0.5
+
+        scale = 1.2
+        tether_len = scale * dist + 0.2
         # print(tether_len)
         self.pub.publish(tether_len)
         
