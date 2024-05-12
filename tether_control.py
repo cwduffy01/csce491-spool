@@ -6,7 +6,6 @@ import rospy
 from std_msgs.msg import Float32, Empty
 
 class TetherControl():
-
     spool_circ = 0.06 * 2 * math.pi    # in m
     offset = 0
 
@@ -18,9 +17,9 @@ class TetherControl():
         self.odrv0 = odrive.find_any()
 
         print("starting calibration sequence")
-        # self.odrv0.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
-        # while self.odrv0.axis0.current_state != AXIS_STATE_IDLE:
-        #     time.sleep(0.1)
+        self.odrv0.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
+        while self.odrv0.axis0.current_state != AXIS_STATE_IDLE:
+            time.sleep(0.1)
 
         self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.odrv0.axis0.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
@@ -39,8 +38,6 @@ class TetherControl():
 
         rospy.init_node('tether_control', anonymous=True)
 
-        print("node initialized")
-
         rate = rospy.Rate(100)
         while not rospy.is_shutdown():
             current_length = self.readpos() * self.spool_circ + self.tether_offset
@@ -49,20 +46,13 @@ class TetherControl():
 
 
     def callback(self, msg):
-        # print(self.odrv0.axis0.controller.input_pos)
-        # self.odrv0.axis0.controller.input_pos = -msg.data / self.spool_circ - self.offset
-
-        # self.moveto(-msg.data / self.spool_circ)
-
         self.moveto(-(msg.data - self.tether_offset) / self.spool_circ)
-        # print(msg.data)
 
     def set_gain(self, msg):
         self.odrv0.axis0.controller.config.input_filter_bandwidth = msg.data
         print(self.odrv0.axis0.controller.config.input_filter_bandwidth)
 
     def moveto(self, pos):
-        # print(str(self.odrv0.axis0.pos_estimate) + " -> " + str(pos - self.offset))
         self.odrv0.axis0.controller.input_pos = pos + self.offset
 
     def readpos(self):
@@ -87,9 +77,6 @@ class TetherControl():
         rospy.sleep(0.5)
 
     def __del__(self):
-        # self.odrv0.axis0.controller.input_pos = 0
-        # self.moveto(0)
-        # time.sleep(10)
         self.odrv0.axis0.controller.input_pos = self.offset
         rospy.sleep(1.0)
         self.odrv0.axis0.requested_state = AXIS_STATE_IDLE
